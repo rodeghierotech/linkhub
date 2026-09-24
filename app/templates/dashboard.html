@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block content %}
+<header class="header">
+    <h1>Encurtador de Links</h1>
+    <p class="subtitle">Cadastre URLs, gere links curtos e acompanhe os cliques.</p>
+</header>
+
+<section class="stats">
+    <div class="card stat-card">
+        <span class="stat-value">{{ stats.total_links }}</span>
+        <span class="stat-label">Links cadastrados</span>
+    </div>
+    <div class="card stat-card">
+        <span class="stat-value">{{ stats.total_clicks }}</span>
+        <span class="stat-label">Cliques totais</span>
+    </div>
+</section>
+
+<section class="card form-card">
+    <h2>Novo link</h2>
+    {% if error %}
+    <p class="error-message">{{ error }}</p>
+    {% endif %}
+    <form action="/links" method="post" class="link-form">
+        <input
+            type="text"
+            name="original_url"
+            placeholder="https://exemplo.com/pagina-longa"
+            required
+        />
+        <button type="submit">Encurtar</button>
+    </form>
+</section>
+
+<section class="card table-card">
+    <h2>Links cadastrados</h2>
+    {% if links|length == 0 %}
+    <p class="empty-state">Nenhum link cadastrado ainda.</p>
+    {% else %}
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr>
+                    <th>URL original</th>
+                    <th>URL curta</th>
+                    <th>Cliques</th>
+                    <th>Criado em</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for link in links %}
+                <tr>
+                    <td class="truncate" title="{{ link.original_url }}">{{ link.original_url }}</td>
+                    <td>
+                        <span class="short-url" data-short-url="{{ base_url }}/r/{{ link.short_code }}">
+                            {{ base_url }}/r/{{ link.short_code }}
+                        </span>
+                    </td>
+                    <td>{{ link.click_count }}</td>
+                    <td>{{ link.created_at.strftime("%d/%m/%Y %H:%M") }}</td>
+                    <td class="actions">
+                        <a href="/r/{{ link.short_code }}" target="_blank" class="btn-icon" title="Abrir">Abrir</a>
+                        <button
+                            type="button"
+                            class="btn-icon copy-btn"
+                            data-short-url="{{ base_url }}/r/{{ link.short_code }}"
+                            title="Copiar"
+                        >
+                            Copiar
+                        </button>
+                        <form action="/links/{{ link.id }}/delete" method="post" onsubmit="return confirm('Excluir este link?');">
+                            <button type="submit" class="btn-icon btn-danger" title="Excluir">Excluir</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}
