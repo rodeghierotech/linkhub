@@ -1,5 +1,6 @@
 .venv/
 .pytest_cache/
+.pytest-tmp-user/
 __pycache__/
 *.py[cod]
 .superpowers/
