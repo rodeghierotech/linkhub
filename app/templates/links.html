@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Links · LinkShort{% endblock %}
+{% block content %}
+<header class="header"><h1>Meus links</h1><p class="subtitle">Crie, organize e acompanhe seus links.</p></header>
+<section class="card form-card">
+    <h2>Novo link</h2>
+    {% if error %}<p class="alert alert-error">{{ error }}</p>{% endif %}
+    <form action="/links" method="post" class="link-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+        <input type="url" name="original_url" placeholder="https://exemplo.com/pagina" required />
+        <input type="text" name="custom_alias" placeholder="alias opcional" minlength="3" maxlength="32" />
+        <button type="submit">Criar link</button>
+    </form>
+</section>
+<section class="card table-card">
+    <h2>Todos os links</h2>
+    {% if not links %}<p class="empty-state">Nenhum link cadastrado ainda.</p>{% else %}
+    <div class="table-wrapper"><table><thead><tr><th>URL</th><th>Link curto</th><th>Status</th><th>Ações</th></tr></thead>
+    <tbody>{% for link in links %}<tr>
+        <td class="truncate">{{ link.original_url }}</td>
+        <td><span class="short-url">{{ base_url }}/r/{{ link.short_code }}</span></td>
+        <td>{{ "Ativo" if link.is_active else "Inativo" }}</td>
+        <td class="actions">
+            <a class="btn-icon" href="/links/{{ link.id }}">Analytics</a>
+            <button type="button" class="btn-icon copy-btn" data-short-url="{{ base_url }}/r/{{ link.short_code }}">Copiar</button>
+            <form action="/links/{{ link.id }}/toggle" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><button class="btn-icon" type="submit">{{ "Desativar" if link.is_active else "Ativar" }}</button></form>
+            <form action="/links/{{ link.id }}/delete" method="post" data-confirm-delete><input type="hidden" name="csrf_token" value="{{ csrf_token }}" /><button class="btn-icon btn-danger" type="submit">Excluir</button></form>
+        </td>
+    </tr>{% endfor %}</tbody></table></div>{% endif %}
+</section>
+{% endblock %}

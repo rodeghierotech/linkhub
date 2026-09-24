@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Entrar · LinkShort{% endblock %}
+{% block content %}
+<main class="auth-shell">
+    <section class="auth-card">
+        <a class="brand auth-brand" href="/" aria-label="LinkShort"><img class="brand-logo" src="/static/images/linkshort-logo.png" alt="LinkShort" /></a>
+        <p class="eyebrow">Bem-vindo de volta</p>
+        <h1>Entre na sua conta</h1>
+        <p class="muted">Gerencie seus links e acompanhe cada acesso.</p>
+        {% if error %}<p class="alert alert-error">{{ error }}</p>{% endif %}
+        <form action="/login" method="post" class="stack-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+            <label>E-mail<input type="email" name="email" value="{{ email }}" required autocomplete="email" /></label>
+            <label>Senha<input type="password" name="password" required autocomplete="current-password" /></label>
+            <button type="submit" class="btn btn-primary">Entrar</button>
+        </form>
+        <p class="auth-switch">Ainda não tem conta? <a href="/register">Cadastre-se</a></p>
+    </section>
+</main>
+{% endblock %}

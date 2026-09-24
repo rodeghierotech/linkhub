@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Criar conta · LinkShort{% endblock %}
+{% block content %}
+<main class="auth-shell">
+    <section class="auth-card">
+        <a class="brand auth-brand" href="/" aria-label="LinkShort"><img class="brand-logo" src="/static/images/linkshort-logo.png" alt="LinkShort" /></a>
+        <p class="eyebrow">Comece agora</p>
+        <h1>Crie sua conta</h1>
+        <p class="muted">Centralize seus links e entenda sua audiência.</p>
+        {% if error %}<p class="alert alert-error">{{ error }}</p>{% endif %}
+        <form action="/register" method="post" class="stack-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}" />
+            <label>Nome<input type="text" name="name" required autocomplete="name" /></label>
+            <label>E-mail<input type="email" name="email" value="{{ email }}" required autocomplete="email" /></label>
+            <label>Senha<input type="password" name="password" minlength="8" required autocomplete="new-password" /></label>
+            <label>Confirme a senha<input type="password" name="password_confirmation" minlength="8" required autocomplete="new-password" /></label>
+            <button type="submit" class="btn btn-primary">Criar conta</button>
+        </form>
+        <p class="auth-switch">Já tem conta? <a href="/login">Entrar</a></p>
+    </section>
+</main>
+{% endblock %}

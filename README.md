@@ -1,93 +1,118 @@
-# Encurtador de Links
+# LinkShort V2
 
-Aplicação web para cadastrar URLs longas, gerar links curtos únicos, redirecionar e contabilizar cliques.
+Plataforma local de gerenciamento de links construída com FastAPI, SQLAlchemy, SQLite e templates Jinja2. A V2 mantém o redirecionamento simples da V1 e adiciona contas, propriedade dos links e analytics detalhados.
 
-## Objetivo
+## Funcionalidades
 
-- Cadastrar uma URL longa e gerar um código curto único.
-- Acessar `/r/{codigo}` e ser redirecionado para a URL original.
-- Contabilizar cada acesso (clique).
-- Visualizar todos os links e a quantidade de cliques de cada um em um dashboard.
-- Excluir links.
+- Cadastro, login e logout com sessão assinada.
+- Senhas protegidas com Argon2.
+- Links isolados por usuário e rotas privadas protegidas.
+- Alias automático ou personalizado (`/r/portfolio`).
+- Ativação, desativação, cópia, analytics e exclusão de links.
+- Um registro por clique, sem armazenamento de endereço IP.
+- Navegador, sistema operacional, dispositivo e origem do acesso.
+- Dashboard com totais, últimos sete dias, link principal e gráfico diário.
+- Página individual com métricas por link.
+- Proteção CSRF em ações POST e autorização por proprietário.
+- Migração incremental do banco V1.
 
-## Tecnologias
-
-- Python 3.11+
-- FastAPI
-- SQLAlchemy 2.0
-- SQLite
-- Pydantic v2
-- Jinja2 (templates server-side)
-- HTML/CSS/JS puro
-
-## Estrutura
+## Arquitetura
 
 ```text
 app/
-├── main.py                # criação da app FastAPI, montagem de rotas e static
-├── database/
-│   ├── database.py        # engine, sessão e dependency get_db
-│   └── models.py          # modelo ORM Link
-├── links/
-│   ├── router.py          # rotas HTTP (dashboard, criar, redirecionar, excluir)
-│   ├── service.py         # regras de negócio (geração de código, validações)
-│   ├── repository.py      # acesso ao banco de dados
-│   └── schemas.py         # schemas Pydantic (LinkCreate, LinkRead, DashboardStats)
-├── templates/
-│   ├── base.html
-│   └── dashboard.html
-└── static/
-    ├── css/style.css
-    └── js/app.js
-requirements.txt
-README.md
+├── main.py                 # app factory, sessão e montagem das rotas
+├── auth/                   # cadastro, login, sessão e usuários
+├── links/                  # criação, autorização e redirecionamento
+├── analytics/              # agregações SQL e dados para gráficos
+├── database/               # engine, sessão e modelos ORM
+├── templates/              # páginas Jinja2
+├── static/                 # CSS e JavaScript
+└── utils/                  # CSRF, aliases e User-Agent
+migrations/                 # migrations Alembic
+tests/                      # testes de integração e migração
 ```
+
+Fluxo principal: `router → service → repository → SQLAlchemy`.
+
+## Banco de dados
+
+### `users`
+
+Conta local com nome, e-mail único, hash da senha e data de criação.
+
+### `links`
+
+URL original, alias único, proprietário, status e data de criação. O campo `legacy_click_count` preserva apenas o total acumulado pela V1.
+
+### `clicks`
+
+Um registro por acesso com data, referrer, categoria da origem, User-Agent, navegador, sistema operacional e dispositivo. Nenhum IP é coletado.
+
+Os links importados da V1 ficam temporariamente sem proprietário e são associados automaticamente ao primeiro usuário cadastrado. Como os cliques antigos não tinham data ou User-Agent, eles entram no total histórico, mas não são inventados nos gráficos e distribuições.
 
 ## Instalação
 
-Criar ambiente virtual:
+Requer Python 3.11 ou superior.
 
-```bash
+```powershell
 python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-Ativar:
+## Configuração
 
-- Windows: `.venv\Scripts\activate`
-- Linux/Mac: `source .venv/bin/activate`
+As variáveis são opcionais para execução local:
 
-Instalar dependências:
+| Variável | Padrão | Uso |
+|---|---|---|
+| `DATABASE_URL` | `sqlite:///./linkshort.db` | Conexão SQLAlchemy |
+| `SESSION_SECRET` | valor local de desenvolvimento | Assinatura do cookie; defina um segredo forte fora do ambiente local |
+| `COOKIE_SECURE` | `false` | Use `true` quando a aplicação estiver sob HTTPS |
 
-```bash
-pip install -r requirements.txt
+Exemplo para a sessão atual do PowerShell:
+
+```powershell
+$env:SESSION_SECRET = "troque-por-um-segredo-longo-e-aleatorio"
 ```
+
+## Migração
+
+Para atualizar um banco V1 existente sem apagar os dados:
+
+```powershell
+.\.venv\Scripts\python.exe -m alembic upgrade head
+```
+
+A aplicação também executa migrations pendentes ao iniciar. Ainda assim, mantenha backup do arquivo SQLite antes de migrations em dados importantes.
+Downgrade automático para a V1 não é oferecido porque removeria o histórico detalhado da V2; para voltar, restaure o backup criado antes da migration.
 
 ## Execução
 
-```bash
-uvicorn app.main:app --reload
+```powershell
+.\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --reload-dir app --host 127.0.0.1 --port 8000
 ```
 
-Acesse: http://127.0.0.1:8000
+Acesse [http://127.0.0.1:8000](http://127.0.0.1:8000). O primeiro cadastro assume automaticamente os links migrados da V1.
 
-O banco SQLite (`linkshort.db`) é criado automaticamente na primeira execução.
+## Testes
 
-## Exemplo de uso
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+```
 
-1. Abra `http://127.0.0.1:8000`.
-2. Cole uma URL, ex: `https://meusite.com/produtos/promocao?id=123`.
-3. Clique em "Encurtar" — o link aparece na tabela como `http://127.0.0.1:8000/r/a8K3xP`.
-4. Acesse o link curto: você é redirecionado para a URL original e o clique é contabilizado.
-5. Use "Copiar" para copiar a URL curta, "Abrir" para testar o redirecionamento, ou "Excluir" para remover o link.
+A suíte cobre migração da V1, cadastro, login, sessão, criação de link, alias duplicado e inválido, redirecionamento, registro de clique, link ausente ou inativo, isolamento entre usuários e agregações de analytics.
 
-## Decisões técnicas
+## Segurança
 
-- **Código curto**: 6 caracteres alfanuméricos gerados com `secrets.choice` (`app/utils/short_code.py`), com verificação de unicidade antes de persistir.
-- **Validação de URL**: `pydantic.HttpUrl` via `TypeAdapter`, exigindo esquema (`http://`/`https://`) e host válido.
-- **Camadas**: `router` (HTTP) → `service` (regras de negócio) → `repository` (acesso a dados), evitando lógica de negócio nas rotas.
-- **Banco síncrono**: SQLAlchemy 2.0 em modo síncrono (suficiente para SQLite/V1; simplifica manutenção).
-- **Sem autenticação/QR Code/expiração/etc.**: fora de escopo desta V1, conforme especificado.
+- Hash Argon2 por meio de `pwdlib`.
+- Cookie HTTP-only, SameSite=Lax e opção Secure por variável de ambiente.
+- Token CSRF por sessão em todos os formulários que alteram dados.
+- Consultas privadas sempre filtradas pelo `user_id` autenticado.
+- URLs validadas por `pydantic.HttpUrl` e aliases por lista segura.
+- Templates `.html` usam o autoescape do Jinja2.
+- ORM SQLAlchemy com parâmetros, sem SQL concatenado.
+- Nenhum endereço IP é persistido.
 
-## Escopo não implementado (V1)
+## Escopo
 
-Autenticação, contas de usuário, Redis, filas, geolocalização, análise de navegador, QR Code, senha em links, expiração, domínio personalizado, planos/pagamentos — previstos para versões futuras.
+A V2 permanece local e síncrona. Redis, filas, geolocalização, domínio personalizado, pagamentos, equipes, API pública, QR Code, OAuth e outros recursos avançados continuam fora do escopo.

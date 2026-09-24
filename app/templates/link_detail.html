@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}/{{ link.short_code }} · LinkShort{% endblock %}
+{% block content %}
+<header class="page-header"><div><a class="back-link" href="/links">← Voltar aos links</a><h1>/{{ link.short_code }}</h1><p class="muted truncate-wide">{{ link.original_url }}</p></div><span class="status {{ 'active' if link.is_active else 'inactive' }}">{{ "Ativo" if link.is_active else "Inativo" }}</span></header>
+<section class="stats-grid stats-grid-compact">
+    <article class="card metric-card"><span class="metric-label">Total de cliques</span><strong>{{ analytics.total_clicks }}</strong></article>
+    <article class="card metric-card"><span class="metric-label">Últimos 7 dias</span><strong>{{ analytics.last_7_days }}</strong></article>
+    <article class="card metric-card"><span class="metric-label">Criado em</span><strong class="metric-date">{{ link.created_at.strftime("%d/%m/%Y") }}</strong></article>
+</section>
+<section class="card chart-card"><div class="section-heading"><h2>Acessos nos últimos 7 dias</h2><span class="pill">7 dias</span></div><div class="chart-wrap"><canvas id="clicksChart"></canvas></div></section>
+<section class="analytics-grid">
+    <article class="card"><h2>Dispositivos</h2><div class="distribution-list">{% for item in analytics.devices %}<div class="distribution-item"><div><span>{{ item.label }}</span><strong>{{ item.percent }}%</strong></div><div class="progress"><span style="width: {{ item.percent }}%"></span></div></div>{% else %}<p class="empty-state">Sem acessos.</p>{% endfor %}</div></article>
+    <article class="card"><h2>Navegadores</h2><div class="distribution-list">{% for item in analytics.browsers %}<div class="distribution-item"><div><span>{{ item.label }}</span><strong>{{ item.percent }}%</strong></div><div class="progress"><span style="width: {{ item.percent }}%"></span></div></div>{% else %}<p class="empty-state">Sem acessos.</p>{% endfor %}</div></article>
+    <article class="card"><h2>Origens</h2><div class="distribution-list">{% for item in analytics.referrers %}<div class="distribution-item"><div><span>{{ item.label }}</span><strong>{{ item.percent }}%</strong></div><div class="progress"><span style="width: {{ item.percent }}%"></span></div></div>{% else %}<p class="empty-state">Sem acessos.</p>{% endfor %}</div></article>
+</section>
+{% endblock %}
+{% block scripts %}<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script><script>window.linkshortCharts = { clicks: {{ analytics.clicks.__dict__ | tojson }} };</script>{% endblock %}

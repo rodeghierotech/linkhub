@@ -1,0 +1,5 @@
+<div class="distribution-list">
+    {% for item in analytics.devices %}
+    <div class="distribution-item"><div><span>{{ item.label }}</span><strong>{{ item.percent }}%</strong></div><div class="progress"><span style="width: {{ item.percent }}%"></span></div></div>
+    {% else %}<p class="empty-state">Sem acessos registrados.</p>{% endfor %}
+</div>
